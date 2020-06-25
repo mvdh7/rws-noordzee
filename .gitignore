@@ -1,0 +1,13 @@
+# Autosaves
+data/~*
+*.asv
+
+# Python
+__pycache__/*
+
+# Intermediate files
+#pickles/*
+archive/*
+
+# Big data files
+*.nc
