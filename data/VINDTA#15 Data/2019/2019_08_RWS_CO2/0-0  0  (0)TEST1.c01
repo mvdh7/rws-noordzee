@@ -1,8 +1,0 @@
-bottle	TEST1	0	0	0	0	0.00	0.00	28	4.000	0.00	0.0	08/08/19	10:34	3C standard	filename: 	0-0  0  (0)TEST1.dat	Date: 	08/08/2019	Time :	10:39Calc. ID: 	01	constants used: 	Prieto and Millero	ml 	mV 	fitted vol.	pH (calc.)	temp.	
-25.000	28.000	25.064	0.560	0.000
-13.564	195.600	-97.377	-2.273	25.000
-temperature 	salinity	phosphate	silicate	temp. used	density0.000000	0.000000	0.000000	0.000000	25.000000	0.997048
-sample (g) 	acid dens.	acid conc.99.704773	1.022700	0.100000
-simple granplot results: AT	CT	E0	K1-7403643.500	-3971987.750	-15.411	6.120
-modified granplot results: AT	CT	E0	K1	RMS-320892.000	-237453.937	58.407	6.120	NaN
-curve fitting results: AT	CT	E0	K1	mse-320892.250	-237453.937	61.104	4.608	6153945.000

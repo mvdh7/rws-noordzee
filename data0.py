@@ -1,100 +1,68 @@
 import pickle
-import numpy as np
-import pandas as pd
+import numpy as np, pandas as pd, matplotlib as mpl
 from matplotlib import dates as mdates
 
+# # Use environment rws_dev
 # from sys import path
 
-# kspath = "/home/matthew/github/koolstof"
-# if kspath not in path:
-#     path.append(kspath)
+# for extra in ["C:/Users/mphum/GitHub/koolstof", "C:/Users/mphum/GitHub/calkulate"]:
+#     if extra not in path:
+#         path.append(extra)
+
 import koolstof as ks
 
-# calkpath = "/home/matthew/github/calkulate"
-# if calkpath not in path:
-#     path.append(calkpath)
-import calkulate as calk
+mpl.rcParams["date.epoch"] = "1970-01-01T00:00:00"
 
-# Import station positions
+#%% Import station positions
 allstations = pd.read_excel("data/Coordinaten_verzuring_20190429.xlsx")
-allstations["lat"] = (
+allstations["latitude"] = (
     allstations.lat_deg + allstations.lat_min / 60 + allstations.lat_sec / 3600
 )
-allstations["lon"] = (
+allstations["longitude"] = (
     allstations.lon_deg + allstations.lon_min / 60 + allstations.lon_sec / 3600
 )
 
-# Import CO2 system measurements and add station positions
-dataversion = "20200406"
-data = pd.read_excel(
-    "data/co2data-{}.xlsx".format(dataversion),
-    sheet_name="2018_2019 All Final Data",
-    header=2,
+# Import RWS bottle file
+data = pd.read_csv(
+    "data/bottle_files/Bottlefile_NIOZ_20210618_MPH.csv",
+    header=3,
     na_values=["#N/B", -999],
 )
-withdata = np.array([isinstance(station, str) for station in data.station.values])
-data = data[withdata].reset_index()
-data["lat"] = np.nan
-data["lon"] = np.nan
+
+#%% Assign station locations and bottle IDs
+data["latitude"] = np.nan
+data["longitude"] = np.nan
 for S in range(len(data.index)):
     SL = allstations["U meetpunt"] == data.station[S]
     if np.any(SL):
-        data.loc[S, "lat"] = allstations.lat[SL].values[0]
-        data.loc[S, "lon"] = allstations.lon[SL].values[0]
+        data.loc[S, "latitude"] = allstations.latitude[SL].values[0]
+        data.loc[S, "longitude"] = allstations.longitude[SL].values[0]
     else:
         print("Warning: station {} has no co-ordinates!".format(data.station[S]))
-data["depth"] = 3.5
-
-# Import bottle file metadata and merge into data
-meta = pd.read_excel(
-    "data/Bottlefile_NIOZ_20191105_MPH.xlsx", header=3, na_values=["#N/B", -999]
-)
-metavars = [
-    "temperature",
-    "nitrite_gvol",
-    "nitrate_gvol",
-    "ammonia_gvol",
-    "phosphate_gvol",
-    "silicate_gvol",
-    "doc_gvol",
-    "pH_rws_total_insitu",
-    "salinity_rws",
-    "chloride_gvol",
-    "sulfate_gvol",
+data["station_bottleid"] = [
+    row.station + "_" + str(row.bottleid) for _, row in data.iterrows()
 ]
-for metavar in metavars:
-    data[metavar] = np.nan
-    for D in range(len(data.index)):
-        DL = data.bottleid[D] == meta.bottleid
-        if any(DL):
-            data.loc[D, metavar] = meta[metavar][DL].values[0]
 
-# Finalise salinity
-data["salinity"] = data.salinity_rws
-for D in range(len(data.index)):
-    if np.isnan(data.loc[D, "salinity"]):
-        data.loc[D, "salinity"] = data.salinity_nioz[D]
-
-# Convert units from mg/l to μmol/l
+#%% Convert units from mg/l to μmol/l
 data["doc_vol"] = 1e3 * data.doc_gvol / ks.molar.mass["C"]
+data["poc_vol"] = 1e3 * data.poc_gvol / ks.molar.mass["C"]
 data["nitrate_vol"] = 1e3 * data.nitrate_gvol / ks.molar.mass["N"]
 data["nitrite_vol"] = 1e3 * data.nitrite_gvol / ks.molar.mass["N"]
+data["dn_vol"] = 1e3 * data.dn_gvol / ks.molar.mass["N"]
 data["ammonia_vol"] = 1e3 * data.ammonia_gvol / ks.molar.mass["N"]
 data["din_vol"] = data.nitrate_vol + data.nitrite_vol + data.ammonia_vol
 data["silicate_vol"] = 1e3 * data.silicate_gvol / ks.molar.mass["Si"]
 data["phosphate_vol"] = (
     data.phosphate_gvol / ks.molar.mass["P"]
-)  # provided in μg/l, not mg/l
+)  # this one provided in μg/l, not mg/l
+data["dp_vol"] = 1e3 * data.dp_gvol / ks.molar.mass["P"]
 data["sulfate_vol"] = 1e3 * data.sulfate_gvol / ks.molar.mass["SO4"]
 data["chloride_vol"] = 1e3 * data.chloride_gvol / ks.molar.mass["Cl"]
 
-# Convert to molinity (μmol/kg-sw)
-nutrients_temperature = 23  # presumed - check! <-------------------------------- TO DO
-data["density_nutrients"] = calk.density.seawater_atm_MP81(
-    nutrients_temperature, data.salinity
-)
+# Set negative nutrients to zero
 nutrients = [
     "doc",
+    "poc",
     "nitrate",
     "nitrite",
     "ammonia",
@@ -103,27 +71,48 @@ nutrients = [
     "phosphate",
     "sulfate",
     "chloride",
+    "dn",
+    "dp",
 ]
 for nutrient in nutrients:
-    data[nutrient] = data[nutrient + "_vol"] / data.density_nutrients
-    data.loc[data[nutrient] < 0, nutrient] = 0  # set negative values to zero
+    nvol = nutrient + "_vol"
+    data.loc[data[nvol] < 0, nvol] = 0
 
-# Nutrient uncertainties from RWS
-data["silicate_unc"] = data.silicate * 0.15
-data["phosphate_unc"] = data.phosphate * 0.25
-data["nitrate_unc"] = data.nitrate * 0.3
-data["nitrite_unc"] = data.nitrite * 0.3
-data["ammonia_unc"] = data.ammonia * 0.15
-data["doc_unc"] = data.doc * 0.2
+# Assign nutrient uncertainties from RWS
+data["silicate_vol_unc"] = data.silicate_vol * 0.15
+data["phosphate_vol_unc"] = data.phosphate_vol * 0.25
+data["nitrate_vol_unc"] = data.nitrate_vol * 0.3
+data["nitrite_vol_unc"] = data.nitrite_vol * 0.3
+data["ammonia_vol_unc"] = data.ammonia_vol * 0.15
+data["doc_vol_unc"] = data.doc_vol * 0.2
 
-# Get unique stations table and assign properties
+#%% Import lab sheet and copy across salinities (for up to v6 only)
+# lab = pd.read_excel(
+#     "data/co2data-20200406.xlsx",
+#     sheet_name="2018_2019 All Final Data",
+#     header=2,
+#     na_values=["#N/B", -999],
+# )
+# data["salinity_nioz"] = np.nan
+# data["datfile_stem"] = ""
+# for i in data.index:
+#     il = (lab.station == data.loc[i].station) & (lab.bottleid == data.loc[i].bottleid)
+#     if sum(il) == 1:
+#         data.loc[i, "salinity_nioz"] = lab.salinity_nioz[il].values
+#         data.loc[i, "datfile_stem"] = lab.station_bottleid[il].values
+data["salinity"] = data.salinity_rws
+# for i in data.index:
+#     if np.isnan(data.loc[i, "salinity"]):
+#         data.loc[i, "salinity"] = data.loc[i].salinity_nioz
+
+#%% Get unique stations table and assign properties
 stations = pd.DataFrame(index=np.unique(data.station))
-stations["lat"] = np.nan
-stations["lon"] = np.nan
+stations["latitude"] = np.nan
+stations["longitude"] = np.nan
 for station in stations.index:
     SL = data.station == station
-    stations.loc[station, "lat"] = np.unique(data.lat[SL])
-    stations.loc[station, "lon"] = np.unique(data.lon[SL])
+    stations.loc[station, "latitude"] = np.unique(data.latitude[SL])
+    stations.loc[station, "longitude"] = np.unique(data.longitude[SL])
 stations["r"] = np.nan
 stations["g"] = np.nan
 stations["b"] = np.nan
@@ -188,15 +177,20 @@ for station in stations.index:
 data["gid"] = stations.gid[data.station].values
 data["rgb"] = stations.rgb[data.station].values
 
-# Add date stuff
+# Get station descriptions
+stations["description"] = [
+    allstations.loc[allstations["U meetpunt"] == station, "U omschr meetpunt"].values[0]
+    for station in stations.index
+]
+
+#%% Add more sampling date variants
+data["datetime"] = pd.to_datetime(data.datetime, format="%d-%m-%Y %H:%M")
 data["datenum"] = mdates.date2num(data.datetime)
 data["day_of_year"] = data.datetime.dt.dayofyear
 
-# Save for making figures in MATLAB
-data.to_csv("pickles/co2data-{}.csv".format(dataversion), index=False)
-stations.to_csv("pickles/stations-{}.csv".format(dataversion), index_label="station")
-groups.to_csv("pickles/groups-{}.csv".format(dataversion), index_label="group")
+# Add depth info
+data["depth"] = -data.height_cm / 100
 
 # Save for next step of Python analysis
-with open("pickles/data0-{}.pkl".format(dataversion), "wb") as f:
+with open("pickles/data0_stations_groups_v10.pkl", "wb") as f:
     pickle.dump((data, stations, groups), f)

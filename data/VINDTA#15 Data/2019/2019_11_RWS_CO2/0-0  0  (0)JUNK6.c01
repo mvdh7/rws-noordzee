@@ -1,7 +1,0 @@
-bottle	JUNK6	0	0	0	0	0.00	0.00	28.000	4.000	0.00	0.0	11/26/19	08:27	3C standard	filename: 	0-0  0  (0)JUNK6.dat	Date: 	26/11/2019	Time :	8:32Calc. ID: 	01	constants used: 	Prieto and Millero	ml 	mV 	fitted vol.	pH (calc.)	temp.	
-6.000	187.300	0.000	0.000	25.000
-temperature 	salinity	phosphate	silicate	temp. used	density25.000000	28.000000	0.000000	0.000000	25.000000	1.018063
-sample (g) 	acid dens.	acid conc.101.806259	1.022700	0.100000
-simple granplot results: AT	CT	E0	K1NaN	NaN	0.000	NaN
-modified granplot results: AT	CT	E0	K1	RMSNaN	NaN	NaN	NaN	0.000
-curve fitting results: AT	CT	E0	K1	mseNaN
