@@ -10,5 +10,5 @@ Analysis is conducted periodically in batches, where each batch consists of the 
 
 ### Currently released versions
 
-  * **v10** (28 July 2021).
+  * **v10** [doi:10.5281/zenodo.5141524](https://doi.org/10.5281/zenodo.5141524) (28 July 2021).
   * **v6.1** [doi:10.5281/zenodo.3907389](https://doi.org/10.5281/zenodo.3907389) (25 June 2020).
