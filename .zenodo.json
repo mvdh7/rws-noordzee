@@ -1,0 +1,24 @@
+{
+    "description": "Data processing scripts for the Netherlands North Sea ocean acidification monitoring programme.", 
+    "license": "MIT", 
+    "title": "mvdh7/rws-noordzee: Rijkswaterstaat-NIOZ North Sea ocean acidification monitoring", 
+    "creators": [
+        {
+            "affiliation": "NIOZ Royal Netherlands Institute for Sea Research, Texel, the Netherlands", 
+            "name": "Humphreys, Matthew P.",
+            "orcid": "0000-0002-9371-7128"
+        },
+        {
+            "affiliation": "NIOZ Royal Netherlands Institute for Sea Research, Texel, the Netherlands", 
+            "name": "Ossebaar, Sharyn"
+        },
+        {
+            "affiliation": "NIOZ Royal Netherlands Institute for Sea Research, Texel, the Netherlands", 
+            "name": "Bakker, Karel"
+        },
+        {
+            "affiliation": "NIOZ Royal Netherlands Institute for Sea Research, Texel, the Netherlands", 
+            "name": "Reichart, Gert-Jan"
+        }
+    ]
+}
